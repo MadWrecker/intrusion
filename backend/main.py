@@ -1,5 +1,4 @@
 from fastapi import FastAPI, Depends, HTTPException, UploadFile, File, Form, BackgroundTasks, Request, Response
-import cv2
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
 from fastapi.staticfiles import StaticFiles
@@ -14,14 +13,22 @@ import hashlib
 from dotenv import load_dotenv
 from contextlib import asynccontextmanager
 
-from models.recognizer import FastFaceRecognizer
-from models.detector import FastFaceDetector
-
-from database import init_db, get_db_connection
 from alerts import get_active_alerts
 from health import get_system_health
 from apscheduler.schedulers.background import BackgroundScheduler
 from utils.logger import get_logger
+
+# ✅ Detect if running on Render
+IS_RENDER = os.environ.get("RENDER") == "true"
+
+# ✅ Safe imports (only for local)
+if not IS_RENDER:
+    import cv2
+    from models.recognizer import FastFaceRecognizer
+    from models.detector import FastFaceDetector
+
+# Your existing imports (keep these if working)
+from database import init_db, get_db_connection
 
 load_dotenv()
 logger = get_logger("main")
