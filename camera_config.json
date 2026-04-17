@@ -1,0 +1,5 @@
+{
+    "camera_name": "Factory Gate Camera",
+    "rtsp_url": "rtsp://admin:FFUHWW@192.168.29.24:554/H264/ch1/main/av_stream",
+    "location": "Factory Entrance"
+}

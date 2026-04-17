@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SecureStay — Hotel Surveillance System</title>
+    <!-- Modern clean fonts for the new UI -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Rajdhani:wght@500;600;700&family=Share+Tech+Mono&family=Exo+2:wght@600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body class="bg-slate-900 text-slate-100 antialiased">
+
+<!-- ===== LOGIN ===== -->
+<div id="login-overlay" class="login-overlay">
+  <div class="login-card">
+    <div class="login-logo">
+      <div class="icon">🏨</div>
+      <h1>SECURE<span style="color:var(--primary)">STAY</span></h1>
+      <p>Advanced Hotel Surveillance</p>
+    </div>
+    <form id="login-form">
+      <div class="form-group">
+        <label>Admin Username</label>
+        <input type="text" id="username" placeholder="admin@hotel.com" value="admin" />
+      </div>
+      <div class="form-group">
+        <label>Password</label>
+        <input type="password" id="password" placeholder="••••••••" value="admin" />
+      </div>
+      <div class="error-text" id="login-error"></div>
+      <button type="submit" class="btn-login" onclick="login(event)">SECURE LOGIN</button>
+    </form>
+    <div class="login-meta">
+      🔒 ENCRYPTED CONNECTION &nbsp;|&nbsp; v2.5.0
+    </div>
+  </div>
+</div>
+
+<!-- ===== DASHBOARD ===== -->
+<div id="dashboard">
+
+  <!-- Header -->
+  <header>
+    <div class="header-left">
+      <div class="header-logo">🏨 SECURE<span>STAY</span></div>
+      <div class="status-badge"><div class="status-dot"></div> SYSTEM ACTIVE</div>
+    </div>
+    <div class="header-right">
+      <div class="header-time" id="live-clock">--:--:--</div>
+      <button class="btn-logout" onclick="doLogout()">⏻ LOGOUT</button>
+    </div>
+  </header>
+
+  <div class="layout">
+    <!-- Sidebar -->
+    <aside>
+      <div class="nav-section">
+        <div class="nav-label">Navigation</div>
+        <div class="nav-item active" onclick="showPage('overview')"><span class="ni">📊</span> Overview</div>
+        <div class="nav-item" onclick="showPage('livefeed')"><span class="ni">📷</span> Live Feed <span class="alert-count" id="alert-cnt">0</span></div>
+        <div class="nav-item" onclick="showPage('persons')"><span class="ni">👥</span> Persons Database</div>
+        <div class="nav-item" onclick="showPage('logs')"><span class="ni">📋</span> Detection Logs</div>
+        <div class="nav-item" onclick="showPage('settings')"><span class="ni">⚙️</span> Settings</div>
+      </div>
+      <div class="nav-section" style="margin-top:24px; padding-top:24px; border-top:1px solid var(--border);">
+        <div class="nav-label">Quick Actions</div>
+        <div class="nav-item" onclick="openAddModal()"><span class="ni">➕</span> Add Person</div>
+      </div>
+    </aside>
+
+    <main>
+
+      <!-- OVERVIEW PAGE -->
+      <div class="page active" id="page-overview">
+        <div class="page-title">SECURITY OVERVIEW</div>
+        <div class="page-sub">// REAL-TIME HOTEL SURVEILLANCE DASHBOARD</div>
+
+        <div class="stats-row">
+          <div class="stat-card blue">
+            <div class="stat-label">Cameras Online</div>
+            <div class="stat-val">1</div>
+            <div class="stat-sub">Main Entrance (Webcam)</div>
+          </div>
+          <div class="stat-card green">
+            <div class="stat-label">Trusted Persons</div>
+            <div class="stat-val" id="trusted-count">0</div>
+            <div class="stat-sub">Registered in system</div>
+          </div>
+          <div class="stat-card red">
+            <div class="stat-label">Alerts Today</div>
+            <div class="stat-val" id="alerts-count">0</div>
+            <div class="stat-sub" style="color:var(--accent2)">Active Incidents</div>
+          </div>
+          <div class="stat-card yellow">
+            <div class="stat-label">Total Logs</div>
+            <div class="stat-val" id="total-logs">0</div>
+            <div class="stat-sub">Since System Start</div>
+          </div>
+        </div>
+
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:20px;">
+          <div class="section">
+            <div class="section-header">
+              <div class="section-title">RECENT <span>INCIDENTS</span></div>
+            </div>
+            <table class="log-table" id="recent-logs-table">
+              <tr><th>Time</th><th>Location</th><th>Status</th></tr>
+            </table>
+          </div>
+
+          <div class="section">
+            <div class="section-header">
+              <div class="section-title">CAMERA <span>STATUS</span></div>
+            </div>
+            <table class="log-table">
+              <tr><th>Camera</th><th>Location</th><th>State</th></tr>
+              <tr>
+                <td style="font-family:'Share Tech Mono',monospace">CAM-01</td>
+                <td>Main Entrance</td>
+                <td><span style="color:var(--accent3); font-size:11px; font-family:'Share Tech Mono',monospace">● ONLINE</span></td>
+              </tr>
+              <tr>
+                <td style="font-family:'Share Tech Mono',monospace">CAM-02</td>
+                <td>Hotel Lobby</td>
+                <td><span style="color:var(--warn); font-size:11px; font-family:'Share Tech Mono',monospace">◌ STANDBY</span></td>
+              </tr>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- LIVE FEED PAGE -->
+      <div class="page" id="page-livefeed">
+        <div class="page-title">LIVE CAMERA FEED</div>
+        <div class="page-sub">// REAL-TIME MONITORING</div>
+
+        <div class="cameras-grid" style="grid-template-columns: 1fr; max-width: 800px;">
+          <div class="cam-feed" id="cam1" style="aspect-ratio: auto; height: 480px; position: relative;">
+            <div class="cam-scan-line"></div>
+            <div class="cam-label">CAM-01 / MAIN ENTRANCE</div>
+            <div class="cam-rec"><div class="cam-rec-dot"></div> REC</div>
+            
+            <img id="live-feed-img" style="width: 100%; height: 100%; object-fit: cover;" src="" />
+            
+            <div class="cam-alert-overlay" id="cam-alert-overlay" style="display:none;">
+              <div class="warn-icon">⚠️</div>
+              <p>UNKNOWN PERSON DETECTED</p>
+              <p style="font-size:11px; font-family:'Share Tech Mono',monospace; color:rgba(255,60,90,.7)">FACE NOT IN DATABASE</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- PERSONS DATABASE PAGE -->
+      <div class="page" id="page-persons">
+        <div class="page-title">PERSONS DATABASE</div>
+        <div class="page-sub">// TRUSTED STAFF, GUESTS & WATCHLIST MANAGEMENT</div>
+
+        <div class="tabs">
+          <div class="tab active" onclick="switchTab(this,'tab-all')">All Persons</div>
+        </div>
+
+        <div class="persons-controls">
+          <input type="text" class="search-box" placeholder="🔍  Search by name or role..." oninput="filterPersons(this.value)" id="search-person" />
+          <button class="btn-add" onclick="openAddModal()">+ ADD PERSON</button>
+        </div>
+
+        <div class="persons-grid" id="persons-grid"></div>
+      </div>
+
+      <!-- LOGS PAGE -->
+      <div class="page" id="page-logs">
+        <div class="page-title">DETECTION LOGS</div>
+        <div class="page-sub">// FULL ACTIVITY & INCIDENT HISTORY</div>
+
+        <div class="section">
+          <div class="section-header">
+            <div class="section-title">ALL <span>EVENTS</span></div>
+            <button class="btn-add" style="padding:8px 16px; font-size:12px;" onclick="loadLogs()">↻ REFRESH</button>
+          </div>
+          <table class="log-table" id="full-logs-table">
+            <thead>
+              <tr>
+                <th>Date & Time</th>
+                <th>Camera</th>
+                <th>Snapshot</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              <!-- Data injected here -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- SETTINGS PAGE (Mock) -->
+      <div class="page" id="page-settings">
+        <div class="page-title">SYSTEM SETTINGS</div>
+        <div class="page-sub">// SETTINGS PAGE MOCKUP</div>
+        <p>Settings are read-only in this demo.</p>
+      </div>
+
+    </main>
+  </div>
+</div>
+
+<!-- WARNING MODAL -->
+<div id="warning-modal">
+  <div class="warning-box">
+    <div class="warn-big">🚨</div>
+    <h2>⚠ INTRUDER DETECTED</h2>
+    <p>An unknown person has been detected.<br>Immediate action is required.</p>
+    <div class="warn-details">
+      <div><span class="k">CAMERA</span><span class="v">CAM-01 / Main Entrance</span></div>
+      <div><span class="k">TIME</span><span class="v" id="warn-time">--:--:--</span></div>
+      <div><span class="k">STATUS</span><span class="v red">UNKNOWN PERSON — NOT IN DB</span></div>
+    </div>
+    
+    <div style="margin-bottom: 20px;">
+        <img id="alert-snapshot" src="" style="width: 150px; border: 2px solid var(--accent2);" />
+    </div>
+
+    <div class="warning-actions">
+      <button class="btn-dismiss" onclick="closeWarning()">DISMISS</button>
+      <button class="btn-alert-security" onclick="alertSecurity()">🚔 CLEAR ALERT</button>
+    </div>
+  </div>
+</div>
+
+<!-- ADD PERSON MODAL -->
+<div id="add-modal">
+  <div class="add-box">
+    <h3>➕ ADD PERSON TO DATABASE</h3>
+    <form id="add-person-form" onsubmit="addPerson(event)">
+        <div class="form-row">
+          <div class="form-group-sm">
+            <label>Full Name</label>
+            <input type="text" id="new-name" placeholder="Enter full name" required />
+          </div>
+          <div class="form-group-sm">
+            <label>Role</label>
+            <select id="new-role" required>
+              <option>Staff</option>
+              <option>Manager</option>
+              <option>Security</option>
+              <option>Guest</option>
+            </select>
+          </div>
+        </div>
+        
+        <div class="photo-upload" onclick="document.getElementById('photo-input').click()">
+          <div class="upload-icon">📷</div>
+          <p>Click to upload photo</p>
+          <img id="photo-preview" src="" alt="" />
+        </div>
+        <input type="file" id="photo-input" accept="image/*" style="display:none" onchange="previewPhoto(this)" required />
+        
+        <div class="modal-actions">
+          <button type="button" class="btn-cancel" onclick="closeAddModal()">CANCEL</button>
+          <button type="submit" class="btn-save">SAVE PERSON</button>
+        </div>
+    </form>
+  </div>
+</div>
+
+<!-- NOTIFICATION BAR -->
+<div id="notif-bar">Alert Dismissed.</div>
+
+<script src="script.js"></script>
+</body>
+</html>

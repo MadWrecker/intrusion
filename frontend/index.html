@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FACTORY GUARD AI — Industrial Surveillance</title>
+    <!-- Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Roboto+Mono:wght@400;600&display=swap" rel="stylesheet">
+    <!-- Tailwind CSS (Local for Offline Support) -->
+    <script src="vendor/tailwind-cdn.js"></script>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            fontFamily: {
+              sans: ['Inter', 'sans-serif'],
+              mono: ['Roboto Mono', 'monospace'],
+            },
+            colors: {
+              factory: {
+                900: '#0B1121', // Darkest blue/gray background
+                800: '#151C2C', // Surface color
+                700: '#1F293D', // Hover surface
+                600: '#334155', // Borders
+                accent: '#3B82F6', // Corporate Blue
+                accentHover: '#2563EB',
+                danger: '#EF4444',
+                warning: '#F59E0B',
+                success: '#10B981',
+              }
+            }
+          }
+        }
+      }
+    </script>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body class="bg-factory-900 text-slate-200 antialiased overflow-hidden h-screen flex flex-col font-sans">
+
+<!-- LOGIN OVERLAY -->
+<div id="login-overlay" class="fixed inset-0 z-[1000] bg-factory-900/95 backdrop-blur-md flex items-center justify-center transition-opacity duration-300">
+  <div class="bg-factory-800 border border-factory-600 rounded-xl p-10 w-full max-w-md shadow-2xl">
+    <div class="text-center mb-8">
+      <div class="text-4xl mb-3">🏭</div>
+      <h1 class="text-2xl font-bold tracking-wider">FACTORY GUARD <span class="text-factory-accent">AI</span></h1>
+      <p class="text-sm text-slate-400 font-mono mt-1">INDUSTRIAL SURVEILLANCE & ATTENDANCE</p>
+    </div>
+    <form id="login-form">
+      <div class="mb-5">
+        <label class="block text-xs font-semibold text-slate-400 mb-2 uppercase tracking-wide">Administrator ID</label>
+        <input type="text" id="username" class="w-full bg-factory-900 border border-factory-600 rounded-md px-4 py-3 text-slate-200 focus:outline-none focus:border-factory-accent focus:ring-1 focus:ring-factory-accent transition-all" placeholder="admin@factory.com" value="admin@factory.com" />
+      </div>
+      <div class="mb-6">
+        <label class="block text-xs font-semibold text-slate-400 mb-2 uppercase tracking-wide">Security Phrase</label>
+        <input type="password" id="password" class="w-full bg-factory-900 border border-factory-600 rounded-md px-4 py-3 text-slate-200 focus:outline-none focus:border-factory-accent focus:ring-1 focus:ring-factory-accent transition-all" placeholder="••••••••" value="admin123" />
+      </div>
+      <div id="login-error" class="text-factory-danger text-sm mb-4 h-5"></div>
+      <button type="button" onclick="login(event)" class="w-full bg-factory-accent hover:bg-factory-accentHover text-white font-bold py-3 px-4 rounded-md transition-colors shadow-lg shadow-factory-accent/20">
+        AUTHENTICATE
+      </button>
+    </form>
+    <div class="text-center mt-8 text-xs text-slate-500 font-mono">
+      ENCRYPTED CONNECTION | FACILITY SECURED
+    </div>
+  </div>
+</div>
+
+<!-- MAIN DASHBOARD -->
+<div id="dashboard" class="hidden flex-1 flex flex-col h-screen">
+
+  <!-- TOP HEADER -->
+  <header class="h-16 bg-factory-800 border-b border-factory-600 flex items-center justify-between px-6 z-50 shrink-0">
+    <div class="flex items-center gap-4">
+      <div class="text-xl font-bold tracking-wide flex items-center gap-2">
+        <span class="text-2xl">🏭</span> FACTORY GUARD <span class="text-factory-accent">AI</span>
+      </div>
+      <div class="bg-factory-success/10 border border-factory-success/20 text-factory-success text-xs font-bold px-3 py-1 rounded-full flex items-center gap-2 tracking-wide uppercase">
+        <div class="w-2 h-2 rounded-full bg-factory-success animate-pulse"></div>
+        System Active
+      </div>
+    </div>
+    <div class="flex items-center gap-6">
+      <div id="live-clock" class="font-mono text-sm text-slate-400 bg-factory-900 px-4 py-1.5 rounded border border-factory-600">--:--:--</div>
+      <button onclick="logout()" class="text-slate-400 hover:text-factory-danger font-semibold text-sm transition-colors flex items-center gap-2">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg>
+        LOGOUT
+      </button>
+    </div>
+  </header>
+
+  <!-- LAYOUT -->
+  <div class="flex flex-1 overflow-hidden">
+    
+    <!-- SIDEBAR -->
+    <aside class="w-64 bg-factory-800 border-r border-factory-600 flex flex-col z-40 shrink-0">
+      <nav class="flex-1 p-4 flex flex-col gap-2">
+        <div class="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 px-3">Monitoring</div>
+        
+        <button id="nav-overview" onclick="showSection('overview')" class="nav-item active flex items-center gap-3 w-full text-left px-4 py-3 rounded-lg text-sm font-medium transition-all">
+          <svg class="w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"></path></svg>
+          Dashboard Overview
+        </button>
+        
+        <button id="nav-live" onclick="showSection('live')" class="nav-item flex items-center gap-3 w-full text-left px-4 py-3 rounded-lg text-sm font-medium transition-all">
+          <svg class="w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>
+          Live Camera Monitor
+        </button>
+
+        <div class="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 mt-4 px-3">Personnel Records</div>
+        
+        <button id="nav-attendance" onclick="showSection('attendance')" class="nav-item flex items-center gap-3 w-full text-left px-4 py-3 rounded-lg text-sm font-medium transition-all">
+          <svg class="w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"></path></svg>
+          Employee Attendance
+        </button>
+        
+        <button id="nav-employees" onclick="showSection('employees')" class="nav-item flex items-center gap-3 w-full text-left px-4 py-3 rounded-lg text-sm font-medium transition-all">
+          <svg class="w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
+          Employee Database
+        </button>
+
+        <button id="nav-temppass" onclick="showSection('temppass')" class="nav-item flex items-center gap-3 w-full text-left px-4 py-3 rounded-lg text-sm font-medium transition-all">
+          <svg class="w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 5v2m0 4v2m0 4v2M5 5a2 2 0 00-2 2v3a2 2 0 110 4v3a2 2 0 002 2h14a2 2 0 002-2v-3a2 2 0 110-4V7a2 2 0 00-2-2H5z"></path></svg>
+          Temporary Passes
+        </button>
+
+        <div class="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 mt-4 px-3">Security logs</div>
+        
+        <button id="nav-intruders" onclick="showSection('intruders')" class="nav-item flex items-center justify-between w-full text-left px-4 py-3 rounded-lg text-sm font-medium transition-all">
+          <div class="flex items-center gap-3">
+            <svg class="w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+            Intruder Detection
+          </div>
+          <span id="nav-badge-intruders" class="bg-factory-danger text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow-lg shadow-factory-danger/40">0</span>
+        </button>
+        
+        <button id="nav-health" onclick="showSection('health')" class="nav-item flex items-center gap-3 w-full text-left px-4 py-3 rounded-lg text-sm font-medium transition-all mt-auto border border-factory-600/50 bg-factory-900/50">
+            <svg class="w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
+            System Health
+        </button>
+      </nav>
+    </aside>
+
+    <!-- CONTENT WRAPPER -->
+    <main class="flex-1 overflow-y-auto w-full relative">
+      <div class="p-8 max-w-7xl mx-auto">
+        
+        <!-- SECTION: OVERVIEW -->
+        <div id="section-overview" class="page-section active block animate-fade-in">
+          <h2 class="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-white to-slate-400 mb-1">FACTORY MONITORING DASHBOARD</h2>
+          <p class="text-sm font-mono text-slate-400 mb-8">// REAL-TIME STATUS OVERVIEW</p>
+          
+          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+            <!-- Stat Cards -->
+            <div class="bg-factory-800 border-l-4 border-factory-accent border-y border-r border-y-factory-600 border-r-factory-600 rounded-r-xl p-6 shadow-lg shadow-factory-800/50">
+              <div class="text-slate-400 text-xs font-bold tracking-wider mb-2 uppercase">Employees Present Today</div>
+              <div class="text-4xl font-mono font-bold text-white mb-1" id="stat-present">0</div>
+              <div class="text-xs text-slate-500">Verified securely</div>
+            </div>
+            
+            <div class="bg-factory-800 border-l-4 border-factory-warning border-y border-r border-y-factory-600 border-r-factory-600 rounded-r-xl p-6 shadow-lg shadow-factory-800/50">
+              <div class="text-slate-400 text-xs font-bold tracking-wider mb-2 uppercase">Employees Late Today</div>
+              <div class="text-4xl font-mono font-bold text-white mb-1" id="stat-late">0</div>
+              <div class="text-xs text-factory-warning">Arrivals post-cutoff</div>
+            </div>
+
+            <div class="bg-factory-800 border-l-4 border-factory-danger border-y border-r border-y-factory-600 border-r-factory-600 rounded-r-xl p-6 shadow-lg shadow-factory-800/50">
+              <div class="text-slate-400 text-xs font-bold tracking-wider mb-2 uppercase">Intruders Detected</div>
+              <div class="text-4xl font-mono font-bold text-white mb-1" id="stat-intruders">0</div>
+              <div class="text-xs text-factory-danger font-semibold">Security events total</div>
+            </div>
+            
+            <div class="bg-factory-800 border-l-4 border-factory-success border-y border-r border-y-factory-600 border-r-factory-600 rounded-r-xl p-6 shadow-lg shadow-factory-800/50 flex flex-col justify-center">
+              <div class="text-slate-400 text-xs font-bold tracking-wider mb-2 uppercase">Camera Status</div>
+              <div class="flex items-center gap-3">
+                <div class="w-3 h-3 bg-factory-success rounded-full shadow-[0_0_10px_rgba(16,185,129,0.8)]"></div>
+                <div class="font-mono text-lg text-white font-bold" id="stat-cam-status">ONLINE</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- SECTION: LIVE CAMERA -->
+        <div id="section-live" class="page-section hidden animate-fade-in">
+          <h2 class="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-white to-slate-400 mb-1">LIVE CAMERA MONITORING</h2>
+          <p class="text-sm font-mono text-slate-400 mb-8">// REAL-TIME INFERENCE STREAM</p>
+          
+          <div class="grid grid-cols-1 xl:grid-cols-3 gap-6">
+            <!-- Feed -->
+            <div class="xl:col-span-2 flex flex-col">
+              <div class="bg-black border border-factory-600 rounded-xl overflow-hidden relative shadow-2xl shadow-factory-900 aspect-video flex items-center justify-center">
+                <!-- Overlays -->
+                <div class="absolute top-4 left-4 z-10 bg-factory-900/80 border border-factory-600 backdrop-blur text-xs font-mono px-3 py-1.5 rounded shadow-lg">
+                  CAM_01 // ENTRANCE GATE
+                </div>
+                <div class="absolute top-4 right-4 z-10 text-factory-danger font-bold text-xs font-mono flex items-center gap-2 bg-factory-900/80 border border-factory-danger/50 backdrop-blur px-3 py-1.5 rounded shadow-lg">
+                  <div class="w-2 h-2 rounded-full bg-factory-danger animate-pulse"></div> INFERENCE LIVE
+                </div>
+                
+                <img id="videoFeed" src="" alt="Connecting to Camera Stream..." class="w-full h-full object-contain" />
+              </div>
+            </div>
+            
+            <!-- Live Event Stream -->
+            <div class="bg-factory-800 border border-factory-600 rounded-xl flex flex-col h-[500px]">
+              <div class="p-4 border-b border-factory-600">
+                <h3 class="font-bold text-sm tracking-wide uppercase">Active Threat Events</h3>
+              </div>
+              <div class="flex-1 overflow-y-auto p-4 flex flex-col gap-3" id="live-alerts-list">
+                  <p class="text-center text-slate-500 text-sm mt-10 font-mono">No active threats detected.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- SECTION: ATTENDANCE -->
+        <div id="section-attendance" class="page-section hidden animate-fade-in">
+          <h2 class="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-white to-slate-400 mb-1">EMPLOYEE ATTENDANCE</h2>
+          <p class="text-sm font-mono text-slate-400 mb-8">// AUTOMATED VISION VERIFICATION LEDGER</p>
+          
+          <div class="bg-factory-800 border border-factory-600 rounded-xl overflow-hidden shadow-xl">
+            <div class="overflow-x-auto">
+              <table class="w-full text-left border-collapse">
+                <thead>
+                  <tr class="bg-factory-900 border-b border-factory-600">
+                    <th class="p-4 text-xs font-bold text-slate-400 uppercase tracking-wider">Date</th>
+                    <th class="p-4 text-xs font-bold text-slate-400 uppercase tracking-wider">Employee</th>
+                    <th class="p-4 text-xs font-bold text-slate-400 uppercase tracking-wider text-center">Check-In</th>
+                    <th class="p-4 text-xs font-bold text-slate-400 uppercase tracking-wider text-center">Check-Out</th>
+                    <th class="p-4 text-xs font-bold text-slate-400 uppercase tracking-wider text-right">Status</th>
+                  </tr>
+                </thead>
+                <tbody class="divide-y divide-factory-600" id="attendance-tbody">
+                  <!-- JS Injects Here -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- SECTION: EMPLOYEES -->
+        <div id="section-employees" class="page-section hidden animate-fade-in">
+          <div class="flex justify-between items-end mb-8">
+            <div>
+              <h2 class="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-white to-slate-400 mb-1">EMPLOYEE DATABASE</h2>
+              <p class="text-sm font-mono text-slate-400">// AUTHORIZED FACILITY PERSONNEL</p>
+            </div>
+            <button onclick="document.getElementById('add-emp-modal').classList.remove('hidden')" class="bg-factory-accent hover:bg-factory-accentHover text-white px-5 py-2.5 rounded-lg font-semibold text-sm transition-colors shadow-lg flex items-center gap-2">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+              Register Employee
+            </button>
+          </div>
+          
+          <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6" id="employee-grid">
+              <!-- JS Injects Here -->
+          </div>
+        </div>
+
+        <!-- SECTION: TEMP PASSES -->
+        <div id="section-temppass" class="page-section hidden animate-fade-in">
+          <div class="flex justify-between items-end mb-8">
+            <div>
+              <h2 class="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-white to-slate-400 mb-1">TEMPORARY PASS REGISTRY</h2>
+              <p class="text-sm font-mono text-slate-400">// VISITOR & TEMP ACCESS MANAGEMENT</p>
+            </div>
+            <button onclick="document.getElementById('add-temppass-modal').classList.remove('hidden')" class="bg-factory-accent hover:bg-factory-accentHover text-white px-5 py-2.5 rounded-lg font-semibold text-sm transition-colors shadow-lg flex items-center gap-2">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+              Request Temp Pass
+            </button>
+          </div>
+          
+          <div class="bg-factory-800 border border-factory-600 rounded-xl overflow-hidden shadow-xl">
+            <div class="overflow-x-auto">
+              <table class="w-full text-left border-collapse">
+                <thead>
+                  <tr class="bg-factory-900 border-b border-factory-600">
+                    <th class="p-4 text-xs font-bold text-slate-400 uppercase tracking-wider">Visitor Name</th>
+                    <th class="p-4 text-xs font-bold text-slate-400 uppercase tracking-wider">Purpose</th>
+                    <th class="p-4 text-xs font-bold text-slate-400 uppercase tracking-wider text-center">Status</th>
+                    <th class="p-4 text-xs font-bold text-slate-400 uppercase tracking-wider text-right">Actions</th>
+                  </tr>
+                </thead>
+                <tbody class="divide-y divide-factory-600" id="temppass-tbody">
+                  <!-- JS Injects Here -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- SECTION: INTRUDERS -->
+        <div id="section-intruders" class="page-section hidden animate-fade-in">
+          <h2 class="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-white to-slate-400 mb-1">INTRUDER DETECTION LOGS</h2>
+          <p class="text-sm font-mono text-slate-400 mb-8">// HISTORICAL UNAUTHORIZED ACCESS EVENTS</p>
+          
+          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" id="intruder-grid">
+            <!-- JS Injects -->
+          </div>
+        </div>
+
+        <!-- SECTION: HEALTH -->
+        <div id="section-health" class="page-section hidden animate-fade-in">
+          <h2 class="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-white to-slate-400 mb-1">SYSTEM HEALTH MONITOR</h2>
+          <p class="text-sm font-mono text-slate-400 mb-8">// INFRASTRUCTURE & RESOURCE STATUS</p>
+          
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-4xl">
+            <div class="bg-factory-800 border border-factory-600 rounded-xl p-6 flex items-center justify-between">
+              <div>
+                <div class="text-sm text-slate-400 font-bold uppercase tracking-wider mb-1">AI Engine Status</div>
+                <div class="text-2xl font-mono text-white" id="health-cpu">Loading...</div>
+                <div class="text-xs text-slate-500 mt-1">CPU Utilization</div>
+              </div>
+              <div class="w-12 h-12 bg-factory-accent/10 rounded-lg flex items-center justify-center text-factory-accent">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z"></path></svg>
+              </div>
+            </div>
+
+            <div class="bg-factory-800 border border-factory-600 rounded-xl p-6 flex items-center justify-between">
+              <div>
+                <div class="text-sm text-slate-400 font-bold uppercase tracking-wider mb-1">Memory allocation</div>
+                <div class="text-2xl font-mono text-white" id="health-mem">Loading...</div>
+                <div class="text-xs text-slate-500 mt-1">RAM Utilization</div>
+              </div>
+              <div class="w-12 h-12 bg-factory-accent/10 rounded-lg flex items-center justify-center text-factory-accent">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>
+              </div>
+            </div>
+
+            <div class="bg-factory-800 border border-factory-600 rounded-xl p-6 flex items-center justify-between">
+              <div>
+                <div class="text-sm text-slate-400 font-bold uppercase tracking-wider mb-1">Database Store</div>
+                <div class="text-2xl font-mono text-white" id="health-db">Loading...</div>
+                <div class="text-xs text-slate-500 mt-1">SQLite Connection</div>
+              </div>
+              <div class="w-12 h-12 bg-factory-success/10 rounded-lg flex items-center justify-center text-factory-success">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4m0 5c0 2.21-3.582 4-8 4s-8-1.79-8-4"></path></svg>
+              </div>
+            </div>
+
+            <div class="bg-factory-800 border border-factory-600 rounded-xl p-6 flex items-center justify-between">
+              <div>
+                <div class="text-sm text-slate-400 font-bold uppercase tracking-wider mb-1">Storage Array</div>
+                <div class="text-2xl font-mono text-white" id="health-disk">Loading...</div>
+                <div class="text-xs text-slate-500 mt-1">Free Space Available</div>
+              </div>
+              <div class="w-12 h-12 bg-factory-accent/10 rounded-lg flex items-center justify-center text-factory-accent">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4"></path></svg>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </main>
+  </div>
+</div>
+
+<!-- MODALS -->
+
+<!-- Add Employee Modall -->
+<div id="add-emp-modal" class="hidden fixed inset-0 z-[2000] bg-factory-900/90 backdrop-blur flex items-center justify-center overflow-y-auto pt-10 pb-10">
+  <div class="bg-factory-800 border border-factory-600 rounded-xl w-full max-w-xl shadow-2xl">
+    <div class="px-6 py-5 border-b border-factory-600 flex justify-between items-center">
+      <h3 class="text-lg font-bold">Register Facility Personnel</h3>
+      <button onclick="document.getElementById('add-emp-modal').classList.add('hidden')" class="text-slate-400 hover:text-white transition-colors text-2xl leading-none">&times;</button>
+    </div>
+    <form id="add-employee-form" onsubmit="addEmployee(event)" class="p-6">
+      <div class="grid grid-cols-2 gap-5 mb-5">
+        <div>
+          <label class="block text-xs font-semibold text-slate-400 mb-2 uppercase tracking-wide">Employee ID Number</label>
+          <input type="text" id="emp-id" required class="w-full bg-factory-900 border border-factory-600 rounded-md px-3 py-2.5 text-slate-200 focus:outline-none focus:border-factory-accent" placeholder="EMP-001">
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-slate-400 mb-2 uppercase tracking-wide">Full Legal Name</label>
+          <input type="text" id="emp-name" required class="w-full bg-factory-900 border border-factory-600 rounded-md px-3 py-2.5 text-slate-200 focus:outline-none focus:border-factory-accent" placeholder="Jane Doe">
+        </div>
+      </div>
+      <div class="grid grid-cols-2 gap-5 mb-5">
+        <div>
+          <label class="block text-xs font-semibold text-slate-400 mb-2 uppercase tracking-wide">Department / Role</label>
+          <input type="text" id="emp-dept" required class="w-full bg-factory-900 border border-factory-600 rounded-md px-3 py-2.5 text-slate-200 focus:outline-none focus:border-factory-accent" placeholder="Assembly Line A">
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-slate-400 mb-2 uppercase tracking-wide">Phone Number</label>
+          <input type="tel" id="emp-phone" class="w-full bg-factory-900 border border-factory-600 rounded-md px-3 py-2.5 text-slate-200 focus:outline-none focus:border-factory-accent" placeholder="+1 234 567 8900">
+        </div>
+      </div>
+      <div class="mb-6">
+        <label class="block text-xs font-semibold text-slate-400 mb-2 uppercase tracking-wide">Face Reference Database (Upload clear images)</label>
+        <div class="border-2 border-dashed border-factory-600 rounded-lg p-6 bg-factory-900/50 hover:bg-factory-900 transition-colors text-center cursor-pointer" onclick="document.getElementById('emp-images').click()">
+            <svg class="w-8 h-8 text-slate-500 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+            <span class="text-sm font-medium text-slate-400 block" id="file-label">Browse files</span>
+            <input type="file" id="emp-images" accept="image/*" multiple class="hidden" onchange="document.getElementById('file-label').innerText = this.files.length + ' files selected'">
+        </div>
+      </div>
+      <div class="flex justify-end gap-3 pt-4 border-t border-factory-600">
+        <button type="button" onclick="document.getElementById('add-emp-modal').classList.add('hidden')" class="px-4 py-2 bg-transparent border border-factory-600 rounded-md font-semibold text-sm hover:bg-factory-700 transition-colors">Cancel</button>
+        <button type="submit" class="px-5 py-2 bg-factory-accent hover:bg-factory-accentHover rounded-md text-white font-semibold text-sm transition-colors shadow-lg">Process Enrollment</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Add Temp Pass Modal -->
+<div id="add-temppass-modal" class="hidden fixed inset-0 z-[2000] bg-factory-900/90 backdrop-blur flex items-center justify-center overflow-y-auto pt-10 pb-10">
+  <div class="bg-factory-800 border border-factory-600 rounded-xl w-full max-w-xl shadow-2xl">
+    <div class="px-6 py-5 border-b border-factory-600 flex justify-between items-center">
+      <h3 class="text-lg font-bold">Request Temporary Pass</h3>
+      <button onclick="document.getElementById('add-temppass-modal').classList.add('hidden')" class="text-slate-400 hover:text-white transition-colors text-2xl leading-none">&times;</button>
+    </div>
+    <form id="add-temppass-form" onsubmit="requestTempPass(event)" class="p-6">
+      <div class="grid grid-cols-2 gap-5 mb-5">
+        <div class="col-span-2">
+          <label class="block text-xs font-semibold text-slate-400 mb-2 uppercase tracking-wide">Visitor Name</label>
+          <input type="text" id="temppass-name" required class="w-full bg-factory-900 border border-factory-600 rounded-md px-3 py-2.5 text-slate-200 focus:outline-none focus:border-factory-accent" placeholder="John Doe">
+        </div>
+        <div class="col-span-2">
+          <label class="block text-xs font-semibold text-slate-400 mb-2 uppercase tracking-wide">Purpose of Visit</label>
+          <input type="text" id="temppass-purpose" required class="w-full bg-factory-900 border border-factory-600 rounded-md px-3 py-2.5 text-slate-200 focus:outline-none focus:border-factory-accent" placeholder="Maintenance / Audit">
+        </div>
+      </div>
+      <div class="flex justify-end gap-3 pt-4 border-t border-factory-600">
+        <button type="button" onclick="document.getElementById('add-temppass-modal').classList.add('hidden')" class="px-4 py-2 bg-transparent border border-factory-600 rounded-md font-semibold text-sm hover:bg-factory-700 transition-colors">Cancel</button>
+        <button type="submit" class="px-5 py-2 bg-factory-accent hover:bg-factory-accentHover rounded-md text-white font-semibold text-sm transition-colors shadow-lg">Submit Request</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Basic Image Lightbox -->
+<div id="imageModal" class="hidden fixed inset-0 z-[3000] bg-black/95 backdrop-blur flex items-center justify-center p-10 cursor-pointer" onclick="closeModal()">
+  <img id="modalImage" class="max-w-full max-h-full rounded-lg border border-factory-600 shadow-2xl" src="">
+</div>
+
+<script src="script.js?v=2.1"></script>
+</body>
+</html>

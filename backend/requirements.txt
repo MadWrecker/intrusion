@@ -1,0 +1,14 @@
+fastapi
+uvicorn
+python-multipart
+opencv-python
+deepface
+pydantic
+requests
+tf-keras
+psutil
+apscheduler
+python-dotenv
+PyJWT
+passlib
+bcrypt
