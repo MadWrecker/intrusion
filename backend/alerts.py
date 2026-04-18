@@ -1,9 +1,14 @@
 import os
-import cv2
 import time
 import requests
 from datetime import datetime
 from database import get_db_connection
+
+IS_RENDER = os.environ.get("RENDER") == "true"
+
+if not IS_RENDER:
+    import cv2
+
 try:
     import winsound
 except ImportError:
