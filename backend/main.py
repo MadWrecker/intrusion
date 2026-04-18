@@ -13,7 +13,6 @@ import hashlib
 from dotenv import load_dotenv
 from contextlib import asynccontextmanager
 
-from alerts import get_active_alerts
 from health import get_system_health
 from apscheduler.schedulers.background import BackgroundScheduler
 from utils.logger import get_logger
