@@ -1,52 +1,111 @@
-from fastapi import FastAPI, Depends, HTTPException, UploadFile, File, Form, BackgroundTasks, Request, Response
-from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import StreamingResponse
-from fastapi.staticfiles import StaticFiles
-from pydantic import BaseModel
 import os
 import shutil
 import time
 import datetime
 import json
-import jwt
 import hashlib
-from dotenv import load_dotenv
 from contextlib import asynccontextmanager
 
-from health import get_system_health
-from apscheduler.schedulers.background import BackgroundScheduler
-from utils.logger import get_logger
+from fastapi import FastAPI, Depends, HTTPException, UploadFile, File, Form, Request, Response
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import StreamingResponse
+from fastapi.staticfiles import StaticFiles
+from pydantic import BaseModel
 
-# ✅ Detect if running on Render
+import jwt
+from dotenv import load_dotenv
+
+# =========================
+# 🌍 ENV CHECK
+# =========================
 IS_RENDER = os.environ.get("RENDER") == "true"
 
-# ✅ Safe imports (only for local)
-if not IS_RENDER:
-    import cv2
-    from models.recognizer import FastFaceRecognizer
-    from models.detector import FastFaceDetector
+# =========================
+# 🟢 SAFE IMPORTS
+# =========================
+try:
+    from apscheduler.schedulers.background import BackgroundScheduler
+except:
+    BackgroundScheduler = None
 
-# Your existing imports (keep these if working)
+# =========================
+# ⚠️ CONDITIONAL IMPORTS
+# =========================
+if not IS_RENDER:
+    try:
+        from health import get_system_health
+    except:
+        get_system_health = None
+
+    try:
+        from utils.logger import get_logger
+    except:
+        get_logger = None
+
+    try:
+        import cv2
+        from models.recognizer import FastFaceRecognizer
+        from models.detector import FastFaceDetector
+    except:
+        pass
+else:
+    # Safe fallbacks for Render
+    def get_system_health():
+        return {"status": "ok"}
+
+    def get_logger(name):
+        import logging
+        return logging.getLogger(name)
+
+# =========================
+# DATABASE IMPORT
+# =========================
 from database import init_db, get_db_connection
 
+# =========================
+# INIT
+# =========================
 load_dotenv()
-logger = get_logger("main")
+logger = get_logger("main") if get_logger else None
 
+# =========================
+# LIFESPAN
+# =========================
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    logger.info("Initializing Factory AI Surveillance Production Engine...")
+    if logger:
+        logger.info("Initializing system...")
+
     init_db()
-    start_scheduler()
+
+    # ❗ Only run scheduler locally
+    if not IS_RENDER and BackgroundScheduler:
+        start_scheduler()
+
     yield
-    logger.info("Gracefully severing tracking pipelines...")
-    try:
-        import camera
-        camera.stop_camera()
-    except Exception:
-        pass
 
-app = FastAPI(title="Factory AI Surveillance API", lifespan=lifespan)
+    if logger:
+        logger.info("Shutting down system...")
 
+    # ❗ Only stop camera locally
+    if not IS_RENDER:
+        try:
+            import camera
+            camera.stop_camera()
+        except Exception:
+            pass
+
+# =========================
+# APP INIT
+# =========================
+app = FastAPI(
+    title="Factory AI Surveillance API",
+    lifespan=lifespan
+)
+
+# =========================
+# CORS
+# =========================
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -55,6 +114,9 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# =========================
+# AUTH CONFIG
+# =========================
 SECRET_KEY = os.environ.get("JWT_SECRET", "factory-guard-production-secret-key-2026")
 ALGORITHM = "HS256"
 
