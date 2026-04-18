@@ -232,30 +232,29 @@ def login(req: LoginRequest, response: Response):
     raise HTTPException(status_code=401, detail="Invalid credentials")
 
 
-@app.get("/camera_feed", dependencies=[Depends(get_current_user)])
-def camera_feed():
-    from camera import generate_frames
-    return StreamingResponse(generate_frames(), media_type="multipart/x-mixed-replace; boundary=frame")
+if not IS_RENDER:
 
-@app.get("/camera/start", dependencies=[Depends(get_current_user)])
-def camera_start():
-    # Will start via background thread automatically when camera_feed is hit
-    # Or we can just set the flag 
-    from camera import camera_should_run
-    import camera
-    camera.camera_should_run = True
-    return {"message": "Camera is set to active state"}
+    @app.get("/camera_feed", dependencies=[Depends(get_current_user)])
+    def camera_feed():
+        from camera import generate_frames
+        return StreamingResponse(generate_frames(), media_type="multipart/x-mixed-replace; boundary=frame")
 
-@app.get("/camera/stop", dependencies=[Depends(get_current_user)])
-def camera_stop():
-    import camera
-    camera.camera_should_run = False
-    return {"message": "Camera stream is set to gracefully stop"}
+    @app.get("/camera/start", dependencies=[Depends(get_current_user)])
+    def camera_start():
+        import camera
+        camera.camera_should_run = True
+        return {"message": "Camera active"}
 
-@app.get("/camera/status", dependencies=[Depends(get_current_user)])
-def camera_status():
-    from camera import get_camera_status
-    return {"status": get_camera_status()}
+    @app.get("/camera/stop", dependencies=[Depends(get_current_user)])
+    def camera_stop():
+        import camera
+        camera.camera_should_run = False
+        return {"message": "Camera stopped"}
+
+    @app.get("/camera/status", dependencies=[Depends(get_current_user)])
+    def camera_status():
+        from camera import get_camera_status
+        return {"status": get_camera_status()}
 
 @app.get("/alerts", dependencies=[Depends(get_current_user)])
 def get_alerts():
